@@ -13,6 +13,7 @@ GameWorld* createStudentWorld(string assetPath)
 StudentWorld::StudentWorld(string assetPath)
 : GameWorld(assetPath)
 {
+    m_peach = nullptr;
 }
 
 int StudentWorld::init()
@@ -95,6 +96,6 @@ bool StudentWorld::readLevel() {
     }
 }
 
-bool StudentWorld::isBlockingObjectAt(double x, double y) {
-    return false; // dummy
-}
+//bool StudentWorld::isBlockingObjectAt(double x, double y) {
+//    return false; // dummy
+//}

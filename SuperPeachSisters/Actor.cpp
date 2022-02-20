@@ -54,14 +54,18 @@ void Peach::doSomething() {
         switch (key) {
         case KEY_PRESS_LEFT:
             setDirection(180);
-            moveTo(x-4, y);
-            
+            moveTo(x - 4, y);
+            break;
+
 
         case KEY_PRESS_RIGHT:
+            break;
 
         case KEY_PRESS_UP:
+            break;
 
         case KEY_PRESS_DOWN:
+            break;
 
         }
         //....

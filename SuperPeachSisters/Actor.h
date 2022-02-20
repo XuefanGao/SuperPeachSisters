@@ -3,7 +3,7 @@
 
 #include "GraphObject.h"
 //below is added
-#include "StudentWorld.h"
+class StudentWorld;
 
 // Students:  Add code to this file, Actor.cpp, StudentWorld.h, and StudentWorld.cpp
 
