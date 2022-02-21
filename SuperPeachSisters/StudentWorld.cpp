@@ -14,6 +14,7 @@ StudentWorld::StudentWorld(string assetPath)
 : GameWorld(assetPath)
 {
     m_peach = nullptr;
+    vector<Actor*> m_actorList;
 }
 
 int StudentWorld::init()
@@ -44,12 +45,52 @@ int StudentWorld::move()
 {
     // This code is here merely to allow the game to build, run, and terminate after you hit enter.
     // Notice that the return value GWSTATUS_PLAYER_DIED will cause our framework to end the current level.
-    decLives();
-    return GWSTATUS_PLAYER_DIED;
+    // ask all actors to doSomething
+    if (m_peach->isAlive())
+        m_peach->doSomething();
+
+    for (auto it = std::begin(m_actorList); it != std::end(m_actorList); ++it) {
+        if((*it)->isAlive())
+            (*it)->doSomething();
+        if (m_peach->isAlive() == false) {
+            playSound(SOUND_PLAYER_DIE);
+            return GWSTATUS_PLAYER_DIED;
+        }
+    }
+    
+    if (peachReachFlagAt(0, 0)) {
+        playSound(SOUND_FINISHED_LEVEL);
+        return GWSTATUS_FINISHED_LEVEL;
+    }
+
+    // if peach reach mario
+
+
+    // delete dead obj
+    for (auto it = std::begin(m_actorList); it != std::end(m_actorList); ++it) {
+        // if((*it)->isAlive() == false)
+            // remove (*it)
+    }
+
+
+    // update status text
+
+    // 
+    // decLives();
+    // return GWSTATUS_PLAYER_DIED;
+    return GWSTATUS_CONTINUE_GAME;
 }
 
 void StudentWorld::cleanUp()
 {
+    for (auto it = std::begin(m_actorList); it != std::end(m_actorList); ++it) {
+        delete* it;
+        it = m_actorList.erase(it);
+    }
+    if (m_peach != nullptr){
+        delete m_peach;
+        m_peach = nullptr;
+    }
 }
 
 
@@ -65,37 +106,54 @@ bool StudentWorld::readLevel() {
     {
         cerr << "Successfully loaded level" << endl;
         Level::GridEntry ge;
-        ge = lev.getContentsOf(5, 10); // x=5, y=10
-        switch (ge)
-        {
-        case Level::empty:
-            cout << "Location 5,10 is empty" << endl; // insert actors here
-            break;
-        case Level::koopa:
-            cout << "Location 5,10 starts with a koopa" << endl;
-            break;
-        case Level::goomba:
-            cout << "Location 5,10 starts with a goomba" << endl;
-                break;
-        case Level::peach:
-            cout << "Location 5,10 is where Peach starts" << endl;
-            // put peach
-            break;
-        case Level::flag:
-            cout << "Location 5,10 is where a flag is" << endl;
-            break;
-        case Level::block:
-            cout << "Location 5,10 holds a regular block" << endl;
-            break;
-        case Level::star_goodie_block:
-            cout << "Location 5,10 has a star goodie block" << endl;
-            break;
-            // etc…
+        for (int x = 0; x < GRID_WIDTH; x++) {
+            for (int y = 0; y < GRID_HEIGHT; y++) {
+                ge = lev.getContentsOf(x, y); // x=5, y=10
+                switch (ge)
+                {
+                case Level::empty:
+                    break;
+                case Level::koopa:
+
+                    
+                    break;
+                case Level::goomba:
+                    // Goomba(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this);
+                    break;
+                case Level::peach:
+                    m_peach = new Peach(x*SPRITE_WIDTH, y*SPRITE_HEIGHT, this);
+                    break;
+                case Level::flag:
+                    m_actorList.push_back(new Flag(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this));
+                    break;
+                case Level::block:
+                    m_actorList.push_back(new Block(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this));
+                    break;
+                case Level::star_goodie_block:
+                    m_actorList.push_back(new Block(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this));
+                    break;
+                    // etc…
+                }
+            }
         }
+        
+        
         return true;
     }
 }
 
-//bool StudentWorld::isBlockingObjectAt(double x, double y) {
-//    return false; // dummy
-//}
+
+// returns true if an object is appearing at (x,y)
+bool StudentWorld::isBlockingObjectAt(double x, double y) {
+    for (auto it = std::begin(m_actorList); it != std::end(m_actorList); ++it) {
+        if ((*it)->getX() == x && (*it)->getY() == y) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// returns true of peach reach flag at x,y
+bool StudentWorld::peachReachFlagAt(double x, double y) {
+    return false; // dummy
+}

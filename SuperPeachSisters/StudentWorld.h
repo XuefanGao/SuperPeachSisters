@@ -23,11 +23,12 @@ public:
 	// below are added functions
 	bool readLevel();  // return false if fails to load a level, true otherwise
 	bool isBlockingObjectAt(double x, double y); // returns true if there exists an object in map at x,y
+	bool peachReachFlagAt(double x, double y);
 private:
 	// Peach pointer
 	Peach* m_peach;
 	// array of pointers to track all actors
-	std::vector<Actor*> actorList;
+	std::vector<Actor*> m_actorList;
 
 
 };
