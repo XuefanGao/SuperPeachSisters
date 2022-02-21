@@ -145,8 +145,21 @@ bool StudentWorld::readLevel() {
 
 // returns true if an object is appearing at (x,y)
 bool StudentWorld::isBlockingObjectAt(double x, double y) {
+    int arr[VIEW_WIDTH][VIEW_HEIGHT] = { 0 };
     for (auto it = std::begin(m_actorList); it != std::end(m_actorList); ++it) {
-        if ((*it)->getX() == x && (*it)->getY() == y) {
+        int x = (*it)->getX();
+        int y = (*it)->getY();
+        for(int i = x; i < x + SPRITE_WIDTH; i++){
+            for (int j = y; j < y + SPRITE_HEIGHT; y++) {
+                arr[i][j] = 1;
+            }
+        }
+    }
+
+    for (auto it = std::begin(m_actorList); it != std::end(m_actorList); ++it) {
+        int x = (*it)->getX();
+        int y = (*it)->getY(); 
+        if(arr[x][y] == 1){
             return true;
         }
     }

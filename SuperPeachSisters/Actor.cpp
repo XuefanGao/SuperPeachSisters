@@ -174,3 +174,4 @@ Star::Star(int startX, int startY, StudentWorld* world)
 {
     setHp(1);
 }
+
