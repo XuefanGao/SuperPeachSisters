@@ -41,6 +41,7 @@ private:
 };
 
 
+// other actors CANNOT move over block
 class Block : public Actor 
 {
 public:
@@ -84,6 +85,7 @@ class Goodie : public Actor
 {
 public:
 	Goodie(int imageID, int startX, int startY, int dir, int depth, double size, StudentWorld* world);
+	virtual void doSomething();
 private:
 
 };
@@ -92,7 +94,7 @@ class Flower : public Goodie
 {
 public:
 	Flower(int startX, int startY, StudentWorld* world);
-	//virtual void doSomething();
+	virtual void doSomething();
 private:
 
 };
@@ -102,7 +104,7 @@ class Mushroom : public Goodie
 {
 public:
 	Mushroom(int startX, int startY, StudentWorld* world);
-	//virtual void doSomething();
+	virtual void doSomething();
 private:
 
 };
@@ -111,21 +113,35 @@ class Star : public Goodie
 {
 public:
 	Star(int startX, int startY, StudentWorld* world);
-	//virtual void doSomething();
+	virtual void doSomething();
 private:
 
 };
 
 
-
-
-
-
 class Goomba : public Actor
 {
 public:
+	Goomba(int startX, int startY, StudentWorld* world);
+	virtual void doSomething();
+private:
 	
 };
 
+class Koopa : public Actor
+{
+public:
+	Koopa(int startX, int startY, StudentWorld* world);
+	virtual void doSomething();
+private:
+};
 
+
+class Piranha: public Actor
+{
+public:
+	Piranha(int startX, int startY, StudentWorld* world);
+	virtual void doSomething();
+private:
+};
 #endif // ACTOR_H_

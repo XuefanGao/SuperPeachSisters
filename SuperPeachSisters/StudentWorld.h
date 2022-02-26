@@ -16,14 +16,18 @@ class StudentWorld : public GameWorld
 {
 public:
 	StudentWorld(std::string assetPath);
+	~StudentWorld();
 	virtual int init();
 	virtual int move();
 	virtual void cleanUp();
 
 	// below are added functions
 	bool readLevel();  // return false if fails to load a level, true otherwise
-	bool isBlockingObjectAt(double x, double y); // returns true if there exists an object in map at x,y
-	bool peachReachFlagAt(double x, double y);
+	bool isBlockingObjectAt(int x, int y); // returns true if there exists an object in map at x,y
+	
+	bool peachReachFlagAt(double x, double y); // private
+	bool getBlocked(double a, double b);
+	void updatesStatusLine();
 private:
 	// Peach pointer
 	Peach* m_peach;

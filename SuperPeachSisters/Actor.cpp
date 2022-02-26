@@ -1,5 +1,7 @@
 #include "Actor.h"
 #include "StudentWorld.h"
+// added
+#include <time.h> 
 
 // Students:  Add code to this file, Actor.h, StudentWorld.h, and StudentWorld.cpp
 Actor::Actor(int imageID, int startX, int startY, int dir, int depth, double size, StudentWorld* world)
@@ -64,7 +66,7 @@ void Peach::doSomething() {
             setDirection(180);
             xnew = x - 4;
             ynew = y;
-            if (getWorld()->isBlockingObjectAt(xnew, ynew)) {
+            if (getWorld()->getBlocked(xnew, ynew)) {
                 //peach bonk
                 // peach doesn't move
             }  
@@ -78,7 +80,7 @@ void Peach::doSomething() {
             setDirection(0);
             xnew = x + 4;
             ynew = y;
-            if (getWorld()->isBlockingObjectAt(xnew, ynew)) {
+            if (getWorld()->getBlocked(xnew, ynew)) {
                 //peach bonk
                 // peach doesn't move
             }
@@ -92,7 +94,7 @@ void Peach::doSomething() {
             xnew = x;
             ynew = y + 4;
             getWorld()->playSound(SOUND_PLAYER_JUMP);
-            if (getWorld()->isBlockingObjectAt(xnew, ynew)) {
+            if (getWorld()->getBlocked(xnew, ynew)) {
                 //peach bonk
                 // peach doesn't move
             }
@@ -156,6 +158,10 @@ Goodie::Goodie(int imageID, int startX, int startY, int dir, int depth, double s
     
 }
 
+void Goodie::doSomething() {
+
+}
+
 
 Flower::Flower(int startX, int startY, StudentWorld* world)
     : Goodie(IID_FLOWER, startX, startY, 0, 1, 1.0, world)
@@ -163,10 +169,18 @@ Flower::Flower(int startX, int startY, StudentWorld* world)
     setHp(1);
 }
 
+void Flower::doSomething() {
+
+}
+
+
 Mushroom::Mushroom(int startX, int startY, StudentWorld* world)
     : Goodie(IID_MUSHROOM, startX, startY, 0, 1, 1.0, world)
 {
     setHp(1);
+}
+void Mushroom::doSomething() {
+
 }
 
 Star::Star(int startX, int startY, StudentWorld* world)
@@ -174,4 +188,33 @@ Star::Star(int startX, int startY, StudentWorld* world)
 {
     setHp(1);
 }
+void Star::doSomething() {
 
+}
+
+Goomba::Goomba(int startX, int startY, StudentWorld* world)
+    : Actor(IID_GOOMBA, startX, startY, (rand() % 2)*180, 1, 0, world)
+{
+    //setHp(1);
+}
+void Goomba::doSomething() {
+
+}
+
+Koopa::Koopa(int startX, int startY, StudentWorld* world)
+    : Actor(IID_KOOPA, startX, startY, (rand() % 2) * 180, 1, 0, world)
+{
+    //setHp(1);
+}
+void Koopa::doSomething() {
+
+}
+
+Piranha::Piranha(int startX, int startY, StudentWorld* world)
+    : Actor(IID_PIRANHA, startX, startY, (rand() % 2) * 180, 1, 0, world)
+{
+    //setHp(1);
+}
+void Piranha::doSomething() {
+
+}

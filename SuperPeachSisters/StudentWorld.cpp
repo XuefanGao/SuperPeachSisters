@@ -17,6 +17,11 @@ StudentWorld::StudentWorld(string assetPath)
     vector<Actor*> m_actorList;
 }
 
+StudentWorld::~StudentWorld()
+{
+    cleanUp();
+}
+
 int StudentWorld::init()
 {
     // if no level data file exists for current level
@@ -46,6 +51,8 @@ int StudentWorld::move()
     // This code is here merely to allow the game to build, run, and terminate after you hit enter.
     // Notice that the return value GWSTATUS_PLAYER_DIED will cause our framework to end the current level.
     // ask all actors to doSomething
+    updatesStatusLine();
+
     if (m_peach->isAlive())
         m_peach->doSomething();
 
@@ -113,25 +120,49 @@ bool StudentWorld::readLevel() {
                 {
                 case Level::empty:
                     break;
-                case Level::koopa:
 
-                    
-                    break;
-                case Level::goomba:
-                    // Goomba(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this);
-                    break;
                 case Level::peach:
-                    m_peach = new Peach(x*SPRITE_WIDTH, y*SPRITE_HEIGHT, this);
+                    m_peach = new Peach(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this);
                     break;
-                case Level::flag:
-                    m_actorList.push_back(new Flag(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this));
-                    break;
+
                 case Level::block:
                     m_actorList.push_back(new Block(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this));
                     break;
+
+                case Level::pipe:
+                    m_actorList.push_back(new Pipe(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this));
+                    break;
+
+                case Level::mushroom_goodie_block:
+                    m_actorList.push_back(new Block(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this));
+                    break;
+
+                case Level::flower_goodie_block:
+                    m_actorList.push_back(new Block(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this));
+                    break;
+
                 case Level::star_goodie_block:
                     m_actorList.push_back(new Block(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this));
                     break;
+
+                case Level::flag:
+                    m_actorList.push_back(new Flag(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this));
+                    break;
+
+                case Level::goomba:
+                    m_actorList.push_back(new Goomba(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this));
+                    break;
+
+                case Level::koopa:
+                    m_actorList.push_back(new Koopa(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this));
+                    break;
+
+                case Level::piranha:
+                    m_actorList.push_back(new Piranha(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this));
+                    break;
+                
+                
+                
                     // etc…
                 }
             }
@@ -144,23 +175,34 @@ bool StudentWorld::readLevel() {
 
 
 // returns true if an object is appearing at (x,y)
-bool StudentWorld::isBlockingObjectAt(double x, double y) {
+bool StudentWorld::isBlockingObjectAt(int x, int y) {
     int arr[VIEW_WIDTH][VIEW_HEIGHT] = { 0 };
     for (auto it = std::begin(m_actorList); it != std::end(m_actorList); ++it) {
-        int x = (*it)->getX();
-        int y = (*it)->getY();
-        for(int i = x; i < x + SPRITE_WIDTH; i++){
-            for (int j = y; j < y + SPRITE_HEIGHT; y++) {
+        int xx = (*it)->getX();
+        int yy = (*it)->getY();
+        for(int i = xx; i <xx + SPRITE_WIDTH; i++){
+            for (int j = yy; j < yy + SPRITE_HEIGHT; j++) {
                 arr[i][j] = 1;
             }
         }
     }
 
-    for (auto it = std::begin(m_actorList); it != std::end(m_actorList); ++it) {
-        int x = (*it)->getX();
-        int y = (*it)->getY(); 
         if(arr[x][y] == 1){
             return true;
+        }
+
+    
+    return false;
+}
+
+// return true if character at x, y will get blocked
+bool StudentWorld::getBlocked(double a, double b) {
+    int x = int(a);
+    int y = int(b);
+    for (int i = x; i < x + SPRITE_WIDTH; i++) {
+        for (int j = y; j < y + SPRITE_HEIGHT; j++) {
+            if (isBlockingObjectAt(i, j))
+                return true;
         }
     }
     return false;
@@ -169,4 +211,15 @@ bool StudentWorld::isBlockingObjectAt(double x, double y) {
 // returns true of peach reach flag at x,y
 bool StudentWorld::peachReachFlagAt(double x, double y) {
     return false; // dummy
+}
+
+
+void StudentWorld::updatesStatusLine()
+{
+    int lives = getLives();
+    int level = getLevel();
+    int points = getScore();
+    ostringstream status;
+    status << "Lives: " << lives << "  Level: " << level << " Points: " << points;
+    setGameStatText(status.str());
 }
