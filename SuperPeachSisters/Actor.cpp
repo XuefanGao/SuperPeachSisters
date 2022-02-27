@@ -50,6 +50,7 @@ StudentWorld* Actor::getWorld() {
     return m_world;
 }
 
+// only reverse when diesction = 0 or 180
 void Actor::reverseDirection() {
     if (getDirection() == 0)
         setDirection(180);
@@ -645,13 +646,43 @@ Goomba::Goomba(int startX, int startY, StudentWorld* world)
     : Actor(IID_GOOMBA, startX, startY, (rand() % 2)*180, 1, 0, world)
 {
     setHp(1);
+    setCanBlock(false);
 }
 void Goomba::doSomething() {
+    if (!isAlive()) {
+        return;
+    }
+    // 2. if overlap with peach, bonk peach
+    double x = getX();
+    double y = getY();
+    if (getWorld()->overlapPeach(x,y)) {
+        getWorld()->getPeach()->bonk();
+        return;
+    }
+    // 3. if can move 1 pixel in current direction
+    double xnew, ynew;
+    getPositionInThisDirection(getDirection(), 1, xnew, ynew);
+    if (getWorld()->overlapBlockActor(xnew,ynew)) {
+        reverseDirection();
+    }
+    // 4. if move 1 pixel in current will partially or fully stepping empty
+    getPositionInThisDirection(getDirection(), 1, xnew, ynew);
+    for (int i = xnew; i < xnew + SPRITE_WIDTH; i++) {
+        if (getWorld()->overlapBlockActor(i, ynew - 1) == false) {
+            reverseDirection();
+        }
+    }
+    // 5. move to xnew, ynew
+    getPositionInThisDirection(getDirection(), 1, xnew, ynew);
+    if (getWorld()->overlapBlockActor(xnew, ynew))
+        return;
+    else
+        moveTo(xnew, ynew);
 
 }
 
 void Goomba::bonk() {
-
+    if()
 }
 
 void Goomba::damage() {}

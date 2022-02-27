@@ -229,6 +229,34 @@ int StudentWorld::overlapActor(double a, double b) {
     return -1;
 }
 
+// returns true if overlaps with a object that can bloc movement
+int StudentWorld::overlapBlockActor(double a, double b) {
+    int x = int(a);
+    int y = int(b);
+    // check the pixels around the given location
+    for (int i = x; i < x + SPRITE_WIDTH; i++) {
+        for (int j = y; j < y + SPRITE_HEIGHT; j++) {
+            //if (isBlockingObjectAt(i, j))
+                //return true;
+            // iterate through actor list
+            for (int index = 0; index < m_actorList.size(); index++) {
+                if (m_actorList[index]->canBlock() == false) {
+                    break;
+                }
+                int actorX = m_actorList[index]->getX();
+                int actorY = m_actorList[index]->getY();
+                for (int ii = actorX; ii < actorX + SPRITE_WIDTH; ii++) {
+                    for (int jj = actorY; jj < actorY + SPRITE_HEIGHT; jj++) {
+                        if (ii == i && jj == j) {
+                            return index;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return -1;
+}
 
 int StudentWorld::overlapDamageableActor(double a, double b) {
     int x = int(a);

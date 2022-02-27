@@ -31,6 +31,7 @@ public:
 	bool isObjectAt(int x, int y); // helper, returns true if x,y exists an object(except peach)
 	//bool getBlocked(double a, double b); // return true if actor at a,b will get blocked by an object (except peach)
 	int overlapActor(double a, double b);
+	int overlapBlockActor(double a, double b);
 	int overlapDamageableActor(double a, double b);
 	bool overlapPeach(double a, double b); // retuen true if actor at a, b overlap with peach
 	void pushActorList(Actor* a); // push a new actor to world's actorList
