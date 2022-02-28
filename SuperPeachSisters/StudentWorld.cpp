@@ -198,7 +198,26 @@ bool StudentWorld::isObjectAt(int x, int y) {
     if(arr[x][y] == 0){
         return false;
     }
+    return true;
+}
 
+
+bool StudentWorld::isBlockObjectAt(int x, int y) {
+    int arr[VIEW_WIDTH][VIEW_HEIGHT] = { 0 };
+    for (auto it = std::begin(m_actorList); it != std::end(m_actorList); ++it) {
+        if ((*it)->canBlock() == true) {
+            int xx = (*it)->getX();
+            int yy = (*it)->getY();
+            for (int i = xx; i < xx + SPRITE_WIDTH; i++) {
+                for (int j = yy; j < yy + SPRITE_HEIGHT; j++) {
+                    arr[i][j] = 1;
+                }
+            }
+        }
+    }
+    if (arr[x][y] == 0) {
+        return false;
+    }
     return true;
 }
 
@@ -240,18 +259,18 @@ int StudentWorld::overlapBlockActor(double a, double b) {
                 //return true;
             // iterate through actor list
             for (int index = 0; index < m_actorList.size(); index++) {
-                if (m_actorList[index]->canBlock() == false) {
-                    break;
-                }
-                int actorX = m_actorList[index]->getX();
-                int actorY = m_actorList[index]->getY();
-                for (int ii = actorX; ii < actorX + SPRITE_WIDTH; ii++) {
-                    for (int jj = actorY; jj < actorY + SPRITE_HEIGHT; jj++) {
-                        if (ii == i && jj == j) {
-                            return index;
+                if (m_actorList[index]->canBlock() == true) {
+                    int actorX = m_actorList[index]->getX();
+                    int actorY = m_actorList[index]->getY();
+                    for (int ii = actorX; ii < actorX + SPRITE_WIDTH; ii++) {
+                        for (int jj = actorY; jj < actorY + SPRITE_HEIGHT; jj++) {
+                            if (ii == i && jj == j) {
+                                return index;
+                            }
                         }
                     }
                 }
+                
             }
         }
     }
@@ -268,18 +287,18 @@ int StudentWorld::overlapDamageableActor(double a, double b) {
                 //return true;
             // iterate through actor list
             for (int index = 0; index < m_actorList.size(); index++) {
-                if (m_actorList[index]->isDamageable() == false) {
-                    break;
-                }
-                int actorX = m_actorList[index]->getX();
-                int actorY = m_actorList[index]->getY();
-                for (int ii = actorX; ii < actorX + SPRITE_WIDTH; ii++) {
-                    for (int jj = actorY; jj < actorY + SPRITE_HEIGHT; jj++) {
-                        if (ii == i && jj == j) {
-                            return index;
+                if (m_actorList[index]->isDamageable() == true) {
+                    int actorX = m_actorList[index]->getX();
+                    int actorY = m_actorList[index]->getY();
+                    for (int ii = actorX; ii < actorX + SPRITE_WIDTH; ii++) {
+                        for (int jj = actorY; jj < actorY + SPRITE_HEIGHT; jj++) {
+                            if (ii == i && jj == j) {
+                                return index;
+                            }
                         }
                     }
                 }
+                
             }
         }
     }

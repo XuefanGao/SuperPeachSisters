@@ -46,11 +46,18 @@ class Peach : public Actor
 {
 public:
 	Peach(int startX, int startY, StudentWorld* world);
+
+	// accessors and mutators
+	bool hasStar();
+
+	
 	virtual void doSomething();
 	virtual void bonk();
 	virtual void damage();
 
-	// danaged by other obj
+	
+
+	// damaged by other obj
 
 	void giveStarPower(int ticks);
 	void giveJumpPower();
@@ -204,36 +211,47 @@ public:
 private:
 };
 
-class Goomba : public Actor
+class Monster : public Actor
 {
 public:
-	Goomba(int startX, int startY, StudentWorld* world);
+	Monster(int imageID, int startX, int startY, StudentWorld* world);
 	virtual void doSomething();
 	virtual void bonk();
 	virtual void damage();
+private:
+
+};
+class Goomba : public Monster
+{
+public:
+	Goomba(int startX, int startY, StudentWorld* world);
+	//virtual void doSomething();
+	// virtual void bonk();
+	// virtual void damage();
 private:
 	
 };
 
-class Koopa : public Actor
+class Koopa : public Monster
 {
 public:
 	Koopa(int startX, int startY, StudentWorld* world);
-	virtual void doSomething();
+	//virtual void doSomething();
 	virtual void bonk();
 	virtual void damage();
 private:
 };
 
 
-class Piranha: public Actor
+class Piranha: public Monster
 {
 public:
 	Piranha(int startX, int startY, StudentWorld* world);
 	virtual void doSomething();
-	virtual void bonk();
-	virtual void damage();
+	// virtual void bonk();
+	// virtual void damage();
 private:
+	int m_fire_delay;
 };
 
 

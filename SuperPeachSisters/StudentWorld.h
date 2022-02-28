@@ -30,6 +30,7 @@ public:
 	bool readLevel();  // return false if fails to load a level, true otherwise
 	bool isObjectAt(int x, int y); // helper, returns true if x,y exists an object(except peach)
 	//bool getBlocked(double a, double b); // return true if actor at a,b will get blocked by an object (except peach)
+	bool isBlockObjectAt(int x, int y);
 	int overlapActor(double a, double b);
 	int overlapBlockActor(double a, double b);
 	int overlapDamageableActor(double a, double b);

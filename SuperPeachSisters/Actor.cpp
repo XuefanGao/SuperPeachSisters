@@ -52,10 +52,12 @@ StudentWorld* Actor::getWorld() {
 
 // only reverse when diesction = 0 or 180
 void Actor::reverseDirection() {
-    if (getDirection() == 0)
+    /*if (getDirection() == 0)
         setDirection(180);
     else if (getDirection() == 180)
-        setDirection(0);
+        setDirection(0);*/
+    int d = getDirection();
+    setDirection(d + 180);
 }
 
 
@@ -86,6 +88,13 @@ Peach::Peach(int startX, int startY, StudentWorld* world)
     m_hasJumpPower = false;
     m_hasShootPower = false;
     
+}
+
+// accessors and mutators
+bool Peach::hasStar() {
+    if (m_invicible_tick > 0)
+        return true;
+    return false;
 }
 
 void Peach::doSomething() {
@@ -177,7 +186,7 @@ void Peach::doSomething() {
         bool canFall = true;
         for (int i = x; i < x + SPRITE_WIDTH; i++) {
             for (int j = y; j >= y - 3; j--) {
-                if (getWorld()->isObjectAt(i, j))
+                if (getWorld()->isBlockObjectAt(i, j))
                     canFall = false;
                     //std::cout << canFall;
             }
@@ -203,7 +212,7 @@ void Peach::doSomething() {
             setDirection(180);
             xnew = x - 4;
             ynew = y;
-            overlapIndex = getWorld()->overlapActor(xnew, ynew);
+            overlapIndex = getWorld()->overlapBlockActor(xnew, ynew);
             if (overlapIndex != -1) {
                 //peach bonk
                 getWorld()->getActor(overlapIndex)->bonk();
@@ -220,7 +229,7 @@ void Peach::doSomething() {
             xnew = x + 4;
             ynew = y;
 
-            overlapIndex = getWorld()->overlapActor(xnew, ynew);
+            overlapIndex = getWorld()->overlapBlockActor(xnew, ynew);
             if (overlapIndex != -1) {
                 //peach bonk
                 getWorld()->getActor(overlapIndex)->bonk();
@@ -239,7 +248,7 @@ void Peach::doSomething() {
             // check if there is object that block movement one pixel below her
             hasSupport = false;
             for (int i = x; i < x + SPRITE_WIDTH; i++) {
-                if (getWorld()->isObjectAt(i, y - 1))
+                if (getWorld()->isBlockObjectAt(i, y - 1))
                     hasSupport = true;
             }
             if (hasSupport == true) {
@@ -640,83 +649,152 @@ void Shell::bonk() {}
 void Shell::damage() {}
 
 // ==============================================================
-// ==========  Goomba  ==========================================
+// ==========  Monster  =========================================
 // ==============================================================
-Goomba::Goomba(int startX, int startY, StudentWorld* world)
-    : Actor(IID_GOOMBA, startX, startY, (rand() % 2)*180, 1, 0, world)
+Monster::Monster(int imageID, int startX, int startY, StudentWorld* world)
+    : Actor(imageID, startX, startY, (rand() % 2) * 180, 0, 1, world)
 {
     setHp(1);
     setCanBlock(false);
 }
-void Goomba::doSomething() {
+
+void Monster::doSomething() {
     if (!isAlive()) {
         return;
     }
+    // std::cout << "goooombaaaaaaa" << std::endl;
     // 2. if overlap with peach, bonk peach
     double x = getX();
     double y = getY();
-    if (getWorld()->overlapPeach(x,y)) {
+    if (getWorld()->overlapPeach(x, y)) {
         getWorld()->getPeach()->bonk();
         return;
     }
     // 3. if can move 1 pixel in current direction
     double xnew, ynew;
     getPositionInThisDirection(getDirection(), 1, xnew, ynew);
-    if (getWorld()->overlapBlockActor(xnew,ynew)) {
+    if (getWorld()->overlapBlockActor(xnew, ynew) != -1) {
         reverseDirection();
     }
-    // 4. if move 1 pixel in current will partially or fully stepping empty
+    //// 4. if move 1 pixel in current will partially or fully stepping empty
     getPositionInThisDirection(getDirection(), 1, xnew, ynew);
     for (int i = xnew; i < xnew + SPRITE_WIDTH; i++) {
-        if (getWorld()->overlapBlockActor(i, ynew - 1) == false) {
+        if (getWorld()->isBlockObjectAt(i, ynew - 1) == false) {
             reverseDirection();
+            break;
         }
     }
-    // 5. move to xnew, ynew
+    //// 5. move to xnew, ynew
     getPositionInThisDirection(getDirection(), 1, xnew, ynew);
-    if (getWorld()->overlapBlockActor(xnew, ynew))
+    if (getWorld()->overlapBlockActor(xnew, ynew) != -1) {
+        // std::cout << "goooombaaaaaaa" << std::endl;
         return;
+    }
     else
         moveTo(xnew, ynew);
-
+}
+void Monster::bonk() {
+    // if bonker is not peach -> ignore bonk
+    // here assume is bonker is peach
+    if (getWorld()->getPeach()->hasStar()) {
+        getWorld()->playSound(SOUND_PLAYER_KICK);
+        getWorld()->increaseScore(100);
+        setHp(0);
+    }
+}
+void Monster::damage() {
+    getWorld()->increaseScore(100);
+    setHp(0);
 }
 
-void Goomba::bonk() {
-    if()
-}
 
-void Goomba::damage() {}
+// ==============================================================
+// ==========  Goomba  ==========================================
+// ==============================================================
+Goomba::Goomba(int startX, int startY, StudentWorld* world)
+    : Monster(IID_GOOMBA, startX, startY, world)
+{
+
+}
+// void Goomba::doSomething() {}
+
+// void Goomba::bonk() { }
+
+// when oeach fireball overlaps with it
+//void Goomba::damage() {
+//}
 // ==============================================================
 // ==========  Koopa  ===========================================
 // ==============================================================
 Koopa::Koopa(int startX, int startY, StudentWorld* world)
-    : Actor(IID_KOOPA, startX, startY, (rand() % 2) * 180, 1, 0, world)
+    : Monster(IID_KOOPA, startX, startY, world)
 {
     //setHp(1);
 }
-void Koopa::doSomething() {
-
-}
+//void Koopa::doSomething() {}
 
 void Koopa::bonk() {
-
+    Monster::bonk();
+    getWorld()->pushActorList(new Shell(getX(), getY(), getDirection(), getWorld()));
 }
 
-void Koopa::damage() {}
+void Koopa::damage() {
+    Monster::damage();
+    getWorld()->pushActorList(new Shell(getX(), getY(), getDirection(), getWorld()));
+}
 // ==============================================================
 // ==========  Piranha  =========================================
 // ==============================================================
 Piranha::Piranha(int startX, int startY, StudentWorld* world)
-    : Actor(IID_PIRANHA, startX, startY, (rand() % 2) * 180, 1, 0, world)
+    : Monster(IID_PIRANHA, startX, startY, world)
 {
-    //setHp(1);
+    m_fire_delay = 0;
 }
 void Piranha::doSomething() {
+    // 1. check alive
+    if (!isAlive()) {
+        return;
+    }
+    // 2. cycle image
+    increaseAnimationNumber();
+    // 3. check if overlaps with oeach
+    double x = getX();
+    double y = getY();
+    if (getWorld()->overlapPeach(x, y)) {
+        getWorld()->getPeach()->bonk();
+        return;
+    }
+    // 4. if peach.y is not within 1.5 * SPRITEHEIGHT of y
+    double peachY = getWorld()->getPeach()->getY();
+    if (abs(peachY - getY()) > 1.5 * double(SPRITE_HEIGHT)) {
+        return;
+    }
+    // 5. Piranha knows peach is on same level
 
+    // 6. piranha face peach
+    if (peachY < getY()) {      // Peach is to Piranha's left
+        setDirection(180);
+    }
+    else if (peachY > getY()) {      // Peach is to Piranha's right
+        setDirection(0);
+    }
+    // 7. check m_fire_delay
+    if (m_fire_delay > 0) {
+        m_fire_delay -= 1;
+        return;
+    }
+    // 8. if no fire delay
+    else if (m_fire_delay == 0) {
+        // compute distance between itself and peach
+        double peachX = getWorld()->getPeach()->getX();
+        if (abs(peachX - getY()) < 8 * SPRITE_WIDTH) {
+            getWorld()->pushActorList(new PiranhaFireball(getX(), getY(), getDirection(), getWorld()));
+            getWorld()->playSound(SOUND_PIRANHA_FIRE);
+            m_fire_delay = 40;
+        }
+    }
 }
 
-void Piranha::bonk() {
+// void Piranha::bonk() {}
 
-}
-
-void Piranha::damage() {}
+// void Piranha::damage() {}
