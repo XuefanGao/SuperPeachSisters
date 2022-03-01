@@ -60,8 +60,12 @@ void Actor::reverseDirection() {
     setDirection(d + 180);
 }
 
-
-
+// returns the direction if actor is facing peach
+int Actor::facePeach() {
+    if (getWorld()->getPeach()->getX() < getX())
+        return 0;
+    return 180;
+}
 
 // ==============================================================
 // ==========  Peach  ===========================================
@@ -69,25 +73,22 @@ void Actor::reverseDirection() {
 Peach::Peach(int startX, int startY, StudentWorld* world)
     : Actor(IID_PEACH, startX, startY, 0, 0, 1.0, world) {
     setCanBlock(false);
+    setDamageable(true);
     setHp(1);
-    // alive
-    m_invicible_tick = 0;
-
-    //bool m_isTempInvisible;
+    
+    // no super power
+    m_invicible_tick = 0;                   /////// star power
     m_temp_invicible_tick = 0;
-
-    //bool m_isRecharge;
-    time_to_recharge_before_next_fire = 0;  ///////
-    m_canShoot = false;
+    
+    m_hasJumpPower = false;                 /////// jump power
     remaining_jump_distance = 0;
-    m_canMoveUp = true;
     
-    // no special power
-    m_isFalling = false;
-
-    m_hasJumpPower = false;
     m_hasShootPower = false;
-    
+    //m_canShoot = false;
+    time_to_recharge_before_next_fire = 0;  /////// shoot power
+
+    //m_canMoveUp = true;
+    m_isFalling = false;
 }
 
 // accessors and mutators
@@ -97,11 +98,34 @@ bool Peach::hasStar() {
     return false;
 }
 
+bool Peach::m_canShoot() {
+    if (m_hasShootPower && time_to_recharge_before_next_fire <= 0) {
+        return true;
+    }
+    return false;
+}
+
+void Peach::giveStarPower(int ticks) {
+    // made invincible for a specified number of ticks
+    m_invicible_tick += ticks;
+}
+
+
+void Peach::giveJumpPower() {
+    // able to jump 50% higher until Peach is bonked by an enemy or piranha - fired fireball
+    m_hasJumpPower = true;
+}
+
+
+void Peach::giveShootPower() {
+    // able to shoot fireballs until Peach is bonked by an enemy or piranha - fired fireball
+    m_hasShootPower = true;
+}
+
 void Peach::doSomething() {
     if (isAlive() == false) {
         return;
     }
-
 
     // 2. Peach must check if she is currently invincible (Star Power)
     if (m_invicible_tick > 0) {
@@ -109,9 +133,9 @@ void Peach::doSomething() {
         m_invicible_tick -= 1;
 
         // If this tick count reaches zero, Peach must set her invincibility status to off.
-        if (m_invicible_tick == 0) {
+        //if (m_invicible_tick == 0) {
             //m_isInvincible = false;
-        }
+        //}
     
     }
 
@@ -123,9 +147,9 @@ void Peach::doSomething() {
         // decrement the number of remaining game ticks before she loses temporary invincibility
         m_temp_invicible_tick -= 1; 
         // If this tick count reaches zero, Peach must set her temporary invincibility status to false.
-        if (m_temp_invicible_tick == 0) {
+        //if (m_temp_invicible_tick == 0) {
             // m_temp_invicible_tick = 0;
-        }
+        //}
     }
     
     // 4. check recharge mode
@@ -133,43 +157,38 @@ void Peach::doSomething() {
     if (time_to_recharge_before_next_fire > 0) {
         time_to_recharge_before_next_fire -= 1;
     }
-    if (time_to_recharge_before_next_fire == 0) {
+    //if (time_to_recharge_before_next_fire == 0) {
         // Peach may again shoot a fireball(if she has Shoot Power).
-        m_canShoot = true;     //if has shoot power
-    }
+        //m_canShoot = true;     //if has shoot power
+    //}
 
     
     // 5. check overlap
-    int overlapIndex = overlap();
+    int overlapIndex = getWorld()->overlapActor(getX(), getY());
     if (overlapIndex != -1) {
         // bonk the overlap object
         getWorld()->getActor(overlapIndex)->bonk();
     }
 
 
-
-    
-    // ??? does ramaining distance > 0 mean isJumping?
     // 6.  if peach previously initiated a jump and her remaining_jump_distance is > 0
     if ( remaining_jump_distance > 0) {
         // try to move upward by four pixels during the current tick
-        // first calculate target x,y
         double x = getX();
         double y = getY();
         double xnew = x;
         double ynew = y+4;
         // if there is object at xnew,ynew
-        overlapIndex = getWorld()->overlapActor(xnew, ynew);
+        overlapIndex = getWorld()->overlapBlockActor(xnew, ynew);
         if (overlapIndex != -1) {
-            // bonk();
+            // bonk;
             getWorld()->getActor(overlapIndex)->bonk();
             // abort moving to xnew,ynew
             remaining_jump_distance = 0;
-            m_canMoveUp = false;
         }
         else {
             moveTo(xnew, ynew);
-            remaining_jump_distance -= 1;   // 1 step closer to reaching the top of her jump
+            remaining_jump_distance -= 1;   
 
         }
     }
@@ -191,8 +210,7 @@ void Peach::doSomething() {
                     //std::cout << canFall;
             }
         }
-        
-        
+            
         // If not, then Peach must update her y position by -4 pixels (so she is falling downward)
         if (canFall == true) {
             moveTo(double(x), y - 4.0);
@@ -255,7 +273,7 @@ void Peach::doSomething() {
                 // set her remaining_jump_distance to the appropriate value
                 if (!m_hasJumpPower)
                     remaining_jump_distance = 8;
-                if (m_hasJumpPower)
+                else
                     remaining_jump_distance = 12;
 
                 getWorld()->playSound(SOUND_PLAYER_JUMP);
@@ -263,10 +281,7 @@ void Peach::doSomething() {
             break;
 
         case KEY_PRESS_SPACE:
-            if (!m_hasShootPower) {
-                // do nothing
-            }
-            else if (time_to_recharge_before_next_fire > 0) {
+            if ((!m_hasShootPower) || time_to_recharge_before_next_fire > 0) {
                 // do nothing
             }
             else {
@@ -294,10 +309,8 @@ void Peach::bonk() {
         // hp - 1
         setHp(getHp() - 1);
         m_temp_invicible_tick = 10;
-        if (m_hasShootPower)
-            m_hasShootPower = false;
-        if (m_hasJumpPower)
-            m_hasJumpPower = false;
+        m_hasShootPower = false;
+        m_hasJumpPower = false;
         if (getHp() >= 1)
             getWorld()->playSound(SOUND_PLAYER_HURT);
         //if(getHp() <= 0)
@@ -306,46 +319,61 @@ void Peach::bonk() {
 }
 
 void Peach::damage() {
-
+    if (m_invicible_tick > 0 || m_temp_invicible_tick > 0) {
+        // then do nothing
+    }
+    else {
+        // hp - 1
+        setHp(getHp() - 1);
+        m_temp_invicible_tick = 10;
+        m_hasShootPower = false;
+        m_hasJumpPower = false;
+        if (getHp() >= 1)
+            getWorld()->playSound(SOUND_PLAYER_HURT);
+        //if(getHp() <= 0)
+            // set peach to dead state
+    }
 }
 
-void Peach::giveStarPower(int ticks) {
-    // made invincible for a specified number of ticks
-    m_invicible_tick += ticks;
-}
 
 
-void Peach::giveJumpPower() {
-    // able to jump 50% higher until Peach is bonked by an enemy or piranha - fired fireball
-    m_hasJumpPower = true;
-}
 
-
-void Peach::giveShootPower() {
-    // able to shoot fireballs until Peach is bonked by an enemy or piranha - fired fireball
-    m_hasShootPower = true;
-}
-
-int Peach::overlap() {
-    return getWorld()->overlapActor(getX(), getY());
-}
 
 
 // ==============================================================
 // ==========  Block  ===========================================
 // ==============================================================
-Block::Block(int startX, int startY, StudentWorld* world) 
+Block::Block(int startX, int startY, int goodie, StudentWorld* world) 
     :Actor(IID_BLOCK, startX, startY, 0, 2, 1.0, world)
 {
     setHp(1);
-    hasGoodie = false;
+    m_goodie = goodie; 
+    m_released = false;
     setDamageable(false);
 }
 
 void Block::doSomething() {}
 
 void Block::bonk() {
-    getWorld()->playSound(SOUND_PLAYER_BONK);
+    if (m_goodie == StudentWorld::noGoodie || m_released) {
+        getWorld()->playSound(SOUND_PLAYER_BONK);
+    }
+    else {  // hold goodie and not released
+        getWorld()->playSound(SOUND_POWERUP_APPEARS);
+        if (m_goodie == StudentWorld::mushroom) {
+            getWorld()->pushActorList(new Mushroom(getX(), getY()+8, getWorld()));
+            m_released = true;
+        }
+        else if (m_goodie == StudentWorld::flower) {
+            getWorld()->pushActorList(new Flower(getX(), getY() + 8, getWorld()));
+            m_released = true;
+        }
+        else if (m_goodie == StudentWorld::star) {
+            getWorld()->pushActorList(new Star(getX(), getY() + 8, getWorld()));
+            m_released = true;
+        }
+        
+    }
 }
 
 void Block::damage() {} // does nothing
@@ -385,7 +413,7 @@ void Flag::doSomething() {
     if (getWorld()->overlapPeach(getX(), getY())) {
         getWorld()->increaseScore(1000);
         setHp(0);
-        getWorld()->advanceToNextLevel();////////////////////////////////////////////////
+        getWorld()->setPeachReachFlag();////////////////////////////////////////////////
     }
 
 }
@@ -412,7 +440,7 @@ void Mario::doSomething() {
     if (getWorld()->overlapPeach(getX(), getY())) {
         getWorld()->increaseScore(1000);
         setHp(0);
-        getWorld()->advanceToNextLevel();//////////////////////////////////
+        getWorld()->setPeachReachMario();//////////////////////////////////
     }
 }
 
@@ -445,7 +473,7 @@ bool Goodie::beneth() {
     int y = getY();
     for (int i = x; i < x + SPRITE_WIDTH; i++) {
         for (int j = y - 2; j < y; j++) {
-            if (getWorld()->isObjectAt(i, j)) {
+            if (getWorld()->isBlockObjectAt(i, j)) {
                 return true;
             }
         }
@@ -457,9 +485,10 @@ bool Goodie::beneth() {
 void Goodie::moveTwo() {
     // calculate target xnew, ynew
     double xnew, ynew;
-    getPositionInThisDirection(getDirection(), 2, xnew, ynew);
+    // face peach
+    getPositionInThisDirection(facePeach(), 2, xnew, ynew);
     // if there is object block movement to xnew, ynew
-    if (getWorld()->isObjectAt(int(xnew), int(ynew))) {
+    if (getWorld()->isBlockObjectAt(int(xnew), int(ynew))) {
         reverseDirection();
         return;
     }
@@ -473,7 +502,7 @@ void Goodie::badMoveTwo() {
     double xnew, ynew;
     getPositionInThisDirection(getDirection(), 2, xnew, ynew);
     // if there is object block movement to xnew, ynew
-    if (getWorld()->isObjectAt(int(xnew), int(ynew))) {
+    if (getWorld()->isBlockObjectAt(int(xnew), int(ynew))) {
         setHp(0);
         return;
     }
@@ -662,7 +691,7 @@ void Monster::doSomething() {
     if (!isAlive()) {
         return;
     }
-    // std::cout << "goooombaaaaaaa" << std::endl;
+
     // 2. if overlap with peach, bonk peach
     double x = getX();
     double y = getY();
@@ -687,7 +716,7 @@ void Monster::doSomething() {
     //// 5. move to xnew, ynew
     getPositionInThisDirection(getDirection(), 1, xnew, ynew);
     if (getWorld()->overlapBlockActor(xnew, ynew) != -1) {
-        // std::cout << "goooombaaaaaaa" << std::endl;
+
         return;
     }
     else
@@ -733,15 +762,15 @@ Koopa::Koopa(int startX, int startY, StudentWorld* world)
 }
 //void Koopa::doSomething() {}
 
-void Koopa::bonk() {
-    Monster::bonk();
-    getWorld()->pushActorList(new Shell(getX(), getY(), getDirection(), getWorld()));
-}
-
-void Koopa::damage() {
-    Monster::damage();
-    getWorld()->pushActorList(new Shell(getX(), getY(), getDirection(), getWorld()));
-}
+//void Koopa::bonk() {
+//    Monster::bonk();
+//    //getWorld()->pushActorList(new Shell(getX(), getY(), getDirection(), getWorld()));
+//}
+//
+//void Koopa::damage() {
+//    Monster::damage();
+//    //getWorld()->pushActorList(new Shell(getX(), getY(), getDirection(), getWorld()));
+//}
 // ==============================================================
 // ==========  Piranha  =========================================
 // ==============================================================

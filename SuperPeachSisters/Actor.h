@@ -27,16 +27,18 @@ public:
 	// virtual functions
 	virtual void doSomething() = 0;
 	virtual void bonk() = 0;  
-	// if get bonked by different obj have different results -> need to solve
 	virtual void damage() = 0;
 
 	// helper functions
 	void reverseDirection();
+	int facePeach(); // returns the direction if actor is facing peach
 private:
 	int m_hp;
 	bool m_canBlock;  // returns true if can block others, initialized to true
 	bool m_damageable; // returns true if can be damaged, default true
 	StudentWorld* m_world;
+
+	
 };
 
 
@@ -49,52 +51,44 @@ public:
 
 	// accessors and mutators
 	bool hasStar();
-
+	bool m_canShoot();            // true when peach has shoot power and recharging <= 0
+	void giveStarPower(int ticks);
+	void giveJumpPower();
+	void giveShootPower();
 	
 	virtual void doSomething();
 	virtual void bonk();
 	virtual void damage();
 
-	
-
-	// damaged by other obj
-
-	void giveStarPower(int ticks);
-	void giveJumpPower();
-	void giveShootPower();
-
 private:
-	// bool m_isInvincible;
+	// star power
 	int m_invicible_tick;
-
-	//bool m_isTempInvisible;
 	int m_temp_invicible_tick;
 
-	//bool m_isRecharge;
-	int time_to_recharge_before_next_fire;
-	bool m_canShoot;
-
-	// bool m_isJumping;
-	int remaining_jump_distance;
-	bool m_canMoveUp;   // if peach try to move up on the next tick
-	bool m_isFalling;
-
-	bool m_hasJumpPower;
+	// shoot power
 	bool m_hasShootPower;
+	int time_to_recharge_before_next_fire;
+	
 
-	int overlap();  // returns the index of acyor overlap with peach, returns -1 if does not overlap
+	// jump power
+	bool m_hasJumpPower;           
+	int remaining_jump_distance;
+
+	bool m_isFalling;
 
 };
 
 class Block : public Actor 
 {
 public:
-	Block(int startX, int startY, StudentWorld* world);
+	
+	Block(int startX, int startY, int goodie, StudentWorld* world);
 	virtual void doSomething();
 	virtual void bonk();
 	virtual void damage();
 private:
-	bool hasGoodie;
+	int m_goodie;  // enum goodieType
+	bool m_released;
 };
 
 class Pipe : public Actor
@@ -211,6 +205,7 @@ public:
 private:
 };
 
+
 class Monster : public Actor
 {
 public:
@@ -229,7 +224,7 @@ public:
 	// virtual void bonk();
 	// virtual void damage();
 private:
-	
+
 };
 
 class Koopa : public Monster
@@ -237,13 +232,13 @@ class Koopa : public Monster
 public:
 	Koopa(int startX, int startY, StudentWorld* world);
 	//virtual void doSomething();
-	virtual void bonk();
-	virtual void damage();
+	//virtual void bonk();
+	//virtual void damage();
 private:
 };
 
 
-class Piranha: public Monster
+class Piranha : public Monster
 {
 public:
 	Piranha(int startX, int startY, StudentWorld* world);
@@ -253,6 +248,7 @@ public:
 private:
 	int m_fire_delay;
 };
+
 
 
 #endif // ACTOR_H_

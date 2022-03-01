@@ -21,14 +21,18 @@ public:
 	virtual int move();
 	virtual void cleanUp();
 
-	// accessor 
+	enum goodieType { noGoodie, mushroom, flower, star };
+
+	// accessor and mutator
 	Actor* getActor(int index);
 	Peach* getPeach();
 	int getPeachDirection();
+	void setPeachReachFlag();
+	void setPeachReachMario();
 
 	// below are added functions
 	bool readLevel();  // return false if fails to load a level, true otherwise
-	bool isObjectAt(int x, int y); // helper, returns true if x,y exists an object(except peach)
+	bool isObjectAt(int x, int y); // returns true if x,y exists an object(except peach)
 	//bool getBlocked(double a, double b); // return true if actor at a,b will get blocked by an object (except peach)
 	bool isBlockObjectAt(int x, int y);
 	int overlapActor(double a, double b);
@@ -39,13 +43,13 @@ public:
 
 	// private
 	void updatesStatusLine();
-	bool peachReachFlagAt(double x, double y); 
 private:
-	// Peach pointer
-	Peach* m_peach;
-	// array of pointers to track all actors
-	std::vector<Actor*> m_actorList;
+	
+	Peach* m_peach;    // Peach pointer
+	std::vector<Actor*> m_actorList;    // array of pointers to track all actors
 
+	bool m_peach_reach_flag;       // initialized to false
+	bool m_peach_reach_mario;     // initialized to flase
 
 };
 

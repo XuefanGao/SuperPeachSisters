@@ -8,13 +8,12 @@ GameWorld* createStudentWorld(string assetPath)
 	return new StudentWorld(assetPath);
 }
 
-// Students:  Add code to this file, StudentWorld.h, Actor.h, and Actor.cpp
-
 StudentWorld::StudentWorld(string assetPath)
 : GameWorld(assetPath)
 {
     m_peach = nullptr;
     vector<Actor*> m_actorList;
+    
 }
 
 StudentWorld::~StudentWorld()
@@ -25,23 +24,13 @@ StudentWorld::~StudentWorld()
 int StudentWorld::init()
 {
     // if no level data file exists for current level
+    // load level data from level file
+    m_peach_reach_flag = false;
+    m_peach_reach_mario = false;
     bool rl = readLevel();
     if ( rl == false) {
         return GWSTATUS_LEVEL_ERROR;
     }
-
-
-    // Initialize the data structures to keep track of your game’s world.
-    // Allocate and insert a Peach object into the game world. Every time a level starts
-    // or restarts, Peach starts out fully initialized(with the no special powers active,
-    // etc.) in her initial location as specified by the current level data file.
-    // Allocate and insert all of the blocks, pipes, flags, enemiesand Mario into the
-    // game world as described below
-
-    // thought: append actors to the vector in readlevel
-
-    // load level data from level file
-
 
     return GWSTATUS_CONTINUE_GAME;
 }
@@ -51,52 +40,61 @@ int StudentWorld::move()
     // This code is here merely to allow the game to build, run, and terminate after you hit enter.
     // Notice that the return value GWSTATUS_PLAYER_DIED will cause our framework to end the current level.
     // ask all actors to doSomething
-    updatesStatusLine();
+    
 
+    // 1. ask all actors to do something
     if (m_peach->isAlive())
         m_peach->doSomething();
-
     for (auto it = std::begin(m_actorList); it != std::end(m_actorList); ++it) {
         if((*it)->isAlive())
             (*it)->doSomething();
         if (m_peach->isAlive() == false) {
+            decLives();
             playSound(SOUND_PLAYER_DIE);
+            decLives();
             return GWSTATUS_PLAYER_DIED;
         }
     }
     
-    if (peachReachFlagAt(0, 0)) {
+
+    // 2. if peach reach flag, advance to next level
+    if (m_peach_reach_flag) {
         playSound(SOUND_FINISHED_LEVEL);
         return GWSTATUS_FINISHED_LEVEL;
     }
-
-    // if peach reach mario
-
-
-    // delete dead obj
-    for (auto it = std::begin(m_actorList); it != std::end(m_actorList); ++it) {
-        // if((*it)->isAlive() == false)
-            // remove (*it)
+        
+    // 3. if peach reach mario
+    if (m_peach_reach_mario) {
+        playSound(SOUND_GAME_OVER);
+        return GWSTATUS_PLAYER_WON;
     }
 
+    // 4. delete dead during tick
+    for (auto it = std::begin(m_actorList); it != std::end(m_actorList); ++it) {
+        if ((*it)->isAlive() == false) {
+            m_actorList.vector::erase(it);
+            it++;
+        }
+    }
 
     // update status text
+    updatesStatusLine();
 
-    // 
-    // decLives();
-    // return GWSTATUS_PLAYER_DIED;
-    return GWSTATUS_CONTINUE_GAME;
+    if(m_peach->isAlive() && !m_peach_reach_flag && !m_peach_reach_mario)
+        return GWSTATUS_CONTINUE_GAME;
 }
 
 void StudentWorld::cleanUp()
 {
     for (auto it = std::begin(m_actorList); it != std::end(m_actorList); ++it) {
-        delete* it;
-        it = m_actorList.erase(it);
+        m_actorList.vector::erase(it);
+        it++;
     }
     if (m_peach != nullptr){
         delete m_peach;
         m_peach = nullptr;
+    }
+    if (getLives() > 0) {
     }
 }
 
@@ -112,7 +110,18 @@ int StudentWorld::getPeachDirection() {
 
 bool StudentWorld::readLevel() {
     Level lev(assetPath());
-    string level_file = "level01.txt";
+    string level_file;
+    switch (getLevel()) {
+    case 1:
+        level_file = "level01.txt";
+        break;
+    case 2:
+        level_file = "level02.txt";
+        break;
+    case 3:
+        level_file = "level03.txt";
+        break;
+    }
     Level::LoadResult result = lev.loadLevel(level_file);
     if (result == Level::load_fail_file_not_found)
         return false;
@@ -135,7 +144,7 @@ bool StudentWorld::readLevel() {
                     break;
 
                 case Level::block:
-                    m_actorList.push_back(new Block(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this));
+                    m_actorList.push_back(new Block(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, noGoodie, this));
                     break;
 
                 case Level::pipe:
@@ -143,19 +152,23 @@ bool StudentWorld::readLevel() {
                     break;
 
                 case Level::mushroom_goodie_block:
-                    m_actorList.push_back(new Block(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this));
+                    m_actorList.push_back(new Block(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, mushroom, this));
                     break;
 
                 case Level::flower_goodie_block:
-                    m_actorList.push_back(new Block(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this));
+                    m_actorList.push_back(new Block(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, flower, this));
                     break;
 
                 case Level::star_goodie_block:
-                    m_actorList.push_back(new Block(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this));
+                    m_actorList.push_back(new Block(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, star, this));
                     break;
 
                 case Level::flag:
                     m_actorList.push_back(new Flag(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this));
+                    break;
+
+                case Level::mario:
+                    m_actorList.push_back(new Mario(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this));
                     break;
 
                 case Level::goomba:
@@ -169,138 +182,77 @@ bool StudentWorld::readLevel() {
                 case Level::piranha:
                     m_actorList.push_back(new Piranha(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, this));
                     break;
-                
-                
-                
+
+
+
                     // etc…
                 }
             }
         }
-        
-        
+
         return true;
     }
+    else
+        return false;
 }
 
- /*helper
- helper, returns true if an object(except peach) is appearing at (x,y)*/
+// returns true if pixel(x,y) is occupied by an object
 bool StudentWorld::isObjectAt(int x, int y) {
-    int arr[VIEW_WIDTH][VIEW_HEIGHT] = { 0 };
     for (auto it = std::begin(m_actorList); it != std::end(m_actorList); ++it) {
         int xx = (*it)->getX();
         int yy = (*it)->getY();
-        for(int i = xx; i <xx + SPRITE_WIDTH; i++){
-            for (int j = yy; j < yy + SPRITE_HEIGHT; j++) {
-                arr[i][j] = 1;
-            }
-        }
+        if (x - SPRITE_WIDTH < xx && xx < x + 1 && y - SPRITE_HEIGHT < yy && yy < y + 1)
+            return true;
     }
-    if(arr[x][y] == 0){
-        return false;
-    }
-    return true;
+    return false;
 }
 
 
 bool StudentWorld::isBlockObjectAt(int x, int y) {
-    int arr[VIEW_WIDTH][VIEW_HEIGHT] = { 0 };
     for (auto it = std::begin(m_actorList); it != std::end(m_actorList); ++it) {
-        if ((*it)->canBlock() == true) {
-            int xx = (*it)->getX();
-            int yy = (*it)->getY();
-            for (int i = xx; i < xx + SPRITE_WIDTH; i++) {
-                for (int j = yy; j < yy + SPRITE_HEIGHT; j++) {
-                    arr[i][j] = 1;
-                }
-            }
-        }
+        if ((*it)->canBlock() == false)
+            continue;
+        int xx = (*it)->getX();
+        int yy = (*it)->getY();
+        if (x - SPRITE_WIDTH < xx && xx < x + 1 && y - SPRITE_HEIGHT < yy && yy < y + 1)
+            return true;
     }
-    if (arr[x][y] == 0) {
-        return false;
-    }
-    return true;
+    return false;
 }
 
-// if actor exist at a,b will get blocked by an actor (except peach), return the index of the object 
+// if actor exist at a,b will overlap an actor (except peach), return the index of the object 
 // otherwise, won't get blocked, return -1
 int StudentWorld::overlapActor(double a, double b) {
-    int x = int(a);
-    int y = int(b);
-    // check the pixels around the given location
-    for (int i = x; i < x + SPRITE_WIDTH; i++) {
-        for (int j = y; j < y + SPRITE_HEIGHT; j++) {
-            //if (isBlockingObjectAt(i, j))
-                //return true;
-            // iterate through actor list
-            for (int index = 0; index < m_actorList.size(); index++) {
-                int actorX = m_actorList[index]->getX();
-                int actorY = m_actorList[index]->getY();
-                for (int ii = actorX; ii <actorX + SPRITE_WIDTH; ii++) {
-                    for (int jj = actorY; jj < actorY + SPRITE_HEIGHT; jj++) {
-                        if (ii == i && jj == j) {
-                            return index;
-                        }     
-                    }
-                }
-            }
-        }
+    for (int i = 0; i < m_actorList.size(); i++) {
+        
+        int x = m_actorList[i]->getX();
+        int y = m_actorList[i]->getY();
+        if (a - SPRITE_WIDTH < x && x < a + SPRITE_WIDTH && b - SPRITE_HEIGHT < y && y < b + SPRITE_HEIGHT)
+            return i;
     }
     return -1;
 }
 
-// returns true if overlaps with a object that can bloc movement
 int StudentWorld::overlapBlockActor(double a, double b) {
-    int x = int(a);
-    int y = int(b);
-    // check the pixels around the given location
-    for (int i = x; i < x + SPRITE_WIDTH; i++) {
-        for (int j = y; j < y + SPRITE_HEIGHT; j++) {
-            //if (isBlockingObjectAt(i, j))
-                //return true;
-            // iterate through actor list
-            for (int index = 0; index < m_actorList.size(); index++) {
-                if (m_actorList[index]->canBlock() == true) {
-                    int actorX = m_actorList[index]->getX();
-                    int actorY = m_actorList[index]->getY();
-                    for (int ii = actorX; ii < actorX + SPRITE_WIDTH; ii++) {
-                        for (int jj = actorY; jj < actorY + SPRITE_HEIGHT; jj++) {
-                            if (ii == i && jj == j) {
-                                return index;
-                            }
-                        }
-                    }
-                }
-                
-            }
-        }
+    for (int i = 0; i < m_actorList.size(); i++) {
+        if (m_actorList[i]->canBlock() == false)
+            continue;
+        int x = m_actorList[i]->getX();
+        int y = m_actorList[i]->getY();
+        if (a - SPRITE_WIDTH < x && x < a + SPRITE_WIDTH && b - SPRITE_HEIGHT < y && y < b + SPRITE_HEIGHT)
+            return i;
     }
     return -1;
 }
 
 int StudentWorld::overlapDamageableActor(double a, double b) {
-    int x = int(a);
-    int y = int(b);
-    // check the pixels around the given location
-    for (int i = x; i < x + SPRITE_WIDTH; i++) {
-        for (int j = y; j < y + SPRITE_HEIGHT; j++) {
-            //if (isBlockingObjectAt(i, j))
-                //return true;
-            // iterate through actor list
-            for (int index = 0; index < m_actorList.size(); index++) {
-                if (m_actorList[index]->isDamageable() == true) {
-                    int actorX = m_actorList[index]->getX();
-                    int actorY = m_actorList[index]->getY();
-                    for (int ii = actorX; ii < actorX + SPRITE_WIDTH; ii++) {
-                        for (int jj = actorY; jj < actorY + SPRITE_HEIGHT; jj++) {
-                            if (ii == i && jj == j) {
-                                return index;
-                            }
-                        }
-                    }
-                }
-                
-            }
-        }
+    for (int i = 0; i < m_actorList.size(); i++) {
+        if (m_actorList[i]->isDamageable() == false)
+            continue;
+        int x = m_actorList[i]->getX();
+        int y = m_actorList[i]->getY();
+        if (a - SPRITE_WIDTH < x && x < a + SPRITE_WIDTH && b - SPRITE_HEIGHT < y && y < b + SPRITE_HEIGHT)
+            return i;
     }
     return -1;
 }
@@ -309,20 +261,12 @@ int StudentWorld::overlapDamageableActor(double a, double b) {
 
 // returns true if object at a,b will overlap with peach
 bool StudentWorld::overlapPeach(double a, double b) {
-    int x = int(a);
-    int y = int(b);
-    int peachX = int(m_peach->getX());
-    int peachY = int(m_peach->getY());
+  
+    double peachX = m_peach->getX();
+    double peachY = m_peach->getY();
 
-    if (peachX - 4 < x && x < peachX + 4 && peachY - 4 < y && y < peachY + 4)
+    if (peachX - 4 < a && a < peachX + 4 && peachY - 4 < b && b < peachY + 4)
         return true;
-    /*for (int i = x; i < x + SPRITE_WIDTH; i++) {
-        for (int j = y; j < y + SPRITE_HEIGHT; j++) {
-            if (peachX-4 < i && i < peachX + 4 && peachY-4 < j && j < peachY + 4)
-                return true;
-        }
-    }*/
-    
     return false;
 }
 
@@ -332,10 +276,7 @@ void StudentWorld::pushActorList(Actor* a) {
 
 // ========== private =====================
 
-// returns true of peach reach flag at x,y
-bool StudentWorld::peachReachFlagAt(double x, double y) {
-    return false; // dummy
-}
+
 
 
 void StudentWorld::updatesStatusLine()
@@ -343,8 +284,10 @@ void StudentWorld::updatesStatusLine()
     int lives = getLives();
     int level = getLevel();
     int points = getScore();
+    
     ostringstream status;
     status << "Lives: " << lives << "  Level: " << level << " Points: " << points;
+
     setGameStatText(status.str());
 }
 
@@ -352,4 +295,12 @@ void StudentWorld::updatesStatusLine()
 
 Peach* StudentWorld::getPeach() {
     return m_peach;
+}
+
+void StudentWorld::setPeachReachFlag() {
+    m_peach_reach_flag = true;
+}
+
+void StudentWorld::setPeachReachMario() {
+    m_peach_reach_mario = true;
 }
